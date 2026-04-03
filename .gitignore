@@ -15,5 +15,4 @@ __pycache__/
 # OpenEnv specifics
 .openenv/
 
-# Secrets (Just in case you ever accidentally save a .env file)
 .env
