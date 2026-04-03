@@ -1,0 +1,19 @@
+# Environments
+.venv/
+env/
+venv/
+
+# Cache and compiled files
+__pycache__/
+*.pyc
+*.pyo
+
+# IDEs
+.vscode/
+.idea/
+
+# OpenEnv specifics
+.openenv/
+
+# Secrets (Just in case you ever accidentally save a .env file)
+.env

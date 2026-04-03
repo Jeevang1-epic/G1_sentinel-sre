@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sentinel-sre"
+version = "0.1.0"
+description = "Autonomous Incident Response Environment (OpenEnv)"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "pydantic",
+    "openenv-core"
+]
+
+[project.scripts]
+server = "server.app:main"
