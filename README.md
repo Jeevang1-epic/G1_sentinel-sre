@@ -1,4 +1,18 @@
-# Sentinel-SRE: Autonomous Incident Response Environment
+---
+title: Sentinel SRE
+emoji: 🛡️
+colorFrom: gray
+colorTo: blue
+sdk: docker
+app_port: 8000
+pinned: false
+tags:
+  - openenv
+  - environment
+  - agent
+---
+
+# 🛡️ Sentinel-SRE: Autonomous Incident Response Environment
 
 Sentinel-SRE is an enterprise-grade OpenEnv simulator designed to evaluate the operational capabilities of AI agents acting as Site Reliability Engineers (SREs). 
 
@@ -20,9 +34,3 @@ The environment procedurally generates incidents across three difficulty tiers:
 - **-0.1:** Wasted action (restarting an already healthy service, targeting a non-existent service).
 - **-0.2:** Syntax/Unknown command error.
 - **-1.0:** SLA breached (ran out of attempts).
-
-## Getting Started
-
-### Start the Environment Server
-```bash
-python run.py
