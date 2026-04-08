@@ -95,6 +95,15 @@ class SentinelSREEnvironment(Environment):
         self._state = None
         self.max_attempts = 10
         self._scenario_by_id = {scenario.task_id: scenario for scenario in self.TASK_SCENARIOS}
+        self._scenario_lookup: Dict[str, TaskScenario] = {}
+        for scenario in self.TASK_SCENARIOS:
+            for key in (
+                scenario.task_id,
+                scenario.name,
+                scenario.difficulty,
+                scenario.task_id.replace("-", "_"),
+            ):
+                self._scenario_lookup[self._normalize_task_key(key)] = scenario
         self._task_graders: Dict[str, Callable[[str, bool], float]] = {
             "api-recovery-easy": self._grade_easy,
             "auth-latency-medium": self._grade_medium,
@@ -207,12 +216,14 @@ class SentinelSREEnvironment(Environment):
 
     def _select_scenario(
         self,
-        requested_task_id: str,
+        requested_task_key: str,
         seed: Optional[int],
         episode_id: Optional[str],
     ) -> TaskScenario:
-        if requested_task_id and requested_task_id in self._scenario_by_id:
-            return self._scenario_by_id[requested_task_id]
+        if requested_task_key:
+            normalized = self._normalize_task_key(requested_task_key)
+            if normalized in self._scenario_lookup:
+                return self._scenario_lookup[normalized]
 
         if seed is not None:
             index = seed % len(self.TASK_SCENARIOS)
@@ -227,6 +238,17 @@ class SentinelSREEnvironment(Environment):
             index = SentinelSREEnvironment._global_reset_counter % len(self.TASK_SCENARIOS)
             SentinelSREEnvironment._global_reset_counter += 1
         return self.TASK_SCENARIOS[index]
+
+    @staticmethod
+    def _normalize_task_key(value: str) -> str:
+        return value.strip().lower().replace("_", "-")
+
+    def _resolve_requested_task_key(self, kwargs: Dict[str, object]) -> str:
+        for key in ("task_id", "task_name", "task", "scenario", "difficulty", "level"):
+            raw = kwargs.get(key)
+            if isinstance(raw, str) and raw.strip():
+                return raw.strip()
+        return ""
 
     def _apply_task_escalation(self) -> str:
         escalation_events = []
@@ -270,9 +292,9 @@ class SentinelSREEnvironment(Environment):
         episode_id: Optional[str] = None,
         **kwargs,
     ) -> SREObservation:
-        requested_task_id = kwargs.get("task_id")
+        requested_task_key = self._resolve_requested_task_key(kwargs)
         scenario = self._select_scenario(
-            requested_task_id=requested_task_id,
+            requested_task_key=requested_task_key,
             seed=seed,
             episode_id=episode_id,
         )
@@ -412,17 +434,26 @@ class SentinelSREEnvironment(Environment):
         task_lines = []
         for scenario in self.TASK_SCENARIOS:
             task_lines.append(
-                f"{scenario.task_id} [{scenario.difficulty}] -> {scenario.grader_id}"
+                (
+                    f"id={scenario.task_id};name={scenario.name};difficulty={scenario.difficulty};"
+                    f"grader={scenario.grader_id};sla_target_steps={scenario.sla_target_steps}"
+                )
             )
 
         return EnvironmentMetadata(
-            name="SentinelSREEnvironment",
+            name="sentinel-sre",
             description=(
-                "OpenEnv SRE incident-response simulator with 3 deterministic tasks "
-                "and programmatic graders. Tasks: " + "; ".join(task_lines)
+                "OpenEnv SRE incident-response simulator. "
+                "tasks_with_graders=3. score_bounds_exclusive=(0.01,0.99). "
+                "task_registry: " + " | ".join(task_lines)
             ),
             version="1.1.0",
             author="Sentinel-SRE Team",
+            readme_content=(
+                "TASK_REGISTRY\n"
+                + "\n".join(task_lines)
+                + "\nSCORE_BOUNDS_EXCLUSIVE: min=0.01 max=0.99"
+            ),
         )
 
     @property
