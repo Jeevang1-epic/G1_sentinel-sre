@@ -286,6 +286,70 @@ class SentinelSREEnvironment(Environment):
 
         return "\n".join(escalation_events)
 
+    def list_task_definitions(self) -> list[dict[str, object]]:
+        tasks: list[dict[str, object]] = []
+        for scenario in self.TASK_SCENARIOS:
+            tasks.append(
+                {
+                    "id": scenario.task_id,
+                    "name": scenario.name,
+                    "difficulty": scenario.difficulty,
+                    "description": scenario.description,
+                    "grader_id": scenario.grader_id,
+                    "sla_target_steps": scenario.sla_target_steps,
+                    "has_grader": scenario.task_id in self._task_graders,
+                }
+            )
+        return tasks
+
+    def evaluate_task_score(self, task_id: str) -> dict[str, object]:
+        if task_id not in self._scenario_by_id:
+            raise ValueError(f"Unknown task_id: {task_id}")
+
+        obs = self.reset(task_id=task_id, seed=20260408)
+        rewards: list[float] = [float(obs.reward if obs.reward is not None else 0.01)]
+        steps = 0
+
+        while not obs.done and steps < self.max_attempts:
+            steps += 1
+            action = SREAction(command="check_health", target="")
+            for alert in obs.active_alerts:
+                lowered = alert.lower()
+                if "critical" in lowered and "payment-gateway" in lowered:
+                    action = SREAction(command="restart_service", target="payment-gateway")
+                    break
+                if "critical" in lowered and "web-api" in lowered:
+                    action = SREAction(command="restart_service", target="web-api")
+                    break
+                if "critical" in lowered and "auth-db" in lowered:
+                    action = SREAction(command="restart_service", target="auth-db")
+                    break
+            else:
+                for alert in obs.active_alerts:
+                    lowered = alert.lower()
+                    if "warn" in lowered and "auth-db" in lowered:
+                        action = SREAction(command="restart_service", target="auth-db")
+                        break
+                    if "warn" in lowered and "web-api" in lowered:
+                        action = SREAction(command="restart_service", target="web-api")
+                        break
+                    if "warn" in lowered and "payment-gateway" in lowered:
+                        action = SREAction(command="restart_service", target="payment-gateway")
+                        break
+
+            obs = self.step(action)
+            rewards.append(float(obs.reward if obs.reward is not None else 0.01))
+
+        score = self._clamp_exclusive(sum(rewards) / max(1, len(rewards)))
+        return {
+            "task_id": task_id,
+            "grader_id": self._scenario_by_id[task_id].grader_id,
+            "score": score,
+            "reward_trace": rewards,
+            "steps": steps,
+            "done": obs.done,
+        }
+
     def reset(
         self,
         seed: Optional[int] = None,

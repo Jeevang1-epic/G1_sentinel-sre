@@ -26,7 +26,7 @@ It models realistic triage, remediation, escalation pressure, and SLA-bound reco
 - `Action`: `SREAction(command, target)`
 - `Observation`: `SREObservation(task_id, task_name, task_difficulty, system_health, active_alerts, terminal_output, attempts_remaining, reward, done)`
 - `State`: `SREState(..., task_id, task_name, task_difficulty, task_description, incident_briefing, grader_id, services_status, resolved)`
-- API endpoints: `/reset`, `/step`, `/state`, `/schema`, `/metadata`, `/health`, `/ws`, `/mcp`
+- API endpoints: `/reset`, `/step`, `/state`, `/schema`, `/metadata`, `/health`, `/ws`, `/mcp`, `/tasks`, `/grade/{task_id}`, `/validate`
 
 ## Task Catalog (3 Programmatic Graders)
 
@@ -41,6 +41,7 @@ It models realistic triage, remediation, escalation pressure, and SLA-bound reco
 - `reset(task_id=..., seed=...)` supports deterministic episode initialization.
 - With `seed`, task selection is deterministic (`seed % 3` mapping).
 - Without `task_id` and without `seed`, resets rotate through all three tasks in round-robin order to guarantee coverage.
+- Task selectors accept aliases: `task_id`, `task_name`, `task`, `scenario`, `difficulty`, `level`.
 - Each task has a dedicated programmatic grader path.
 
 ## Reward/Grader Design
