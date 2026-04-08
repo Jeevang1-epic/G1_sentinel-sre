@@ -1,2 +1,21 @@
 name: sentinel-sre
-description: An enterprise-grade Site Reliability Engineering (SRE) simulator for evaluating autonomous agent incident response.
+description: Enterprise SRE incident-response simulator with deterministic multi-task graders.
+version: 1.1.0
+tags:
+  - openenv
+  - sre
+  - reliability
+  - incident-response
+tasks:
+  - id: api-recovery-easy
+    difficulty: easy
+    grader: grader-api-recovery-easy-v1
+  - id: auth-latency-medium
+    difficulty: medium
+    grader: grader-auth-latency-medium-v1
+  - id: payment-cascade-hard
+    difficulty: hard
+    grader: grader-payment-cascade-hard-v1
+score_bounds:
+  exclusive_min: 0.01
+  exclusive_max: 0.99
